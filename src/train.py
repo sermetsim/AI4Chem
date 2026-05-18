@@ -11,7 +11,7 @@ TO DO:
 
 import numpy as np
 from src.data_utils import load_tg_csv, TRAIN_DATA_PATH, TEST_DATA_PATH, VALIDATION_DATA_PATH
-from src.models import LinearRegressionClosedForm, RidgeRegressionClosedForm, RandomForest
+from src.models import LinearRegressionClosedForm, RidgeRegressionClosedForm, RandomForest, XGBoostModel, SupportVectorModel
 from src.evaluate import mean_squared_error, mean_absolute_error, r2_score, root_mean_squared_error
 from src.featurize import psmiles_to_nparray
 from pathlib import Path
@@ -90,6 +90,20 @@ def run_ridge_regression_experiment(alpha: float = 1.0) -> dict[str, float]:
 def run_random_forest_regression_experiment(n_estimators = 100) -> dict[str, float]:
     X_train, y_train, X_validation, y_validation, X_test, y_test = load_and_featurize_data()
     model = RandomForest(n_estimators=n_estimators)
+    y_pred_validation, y_pred_test = fit_and_predict(model, X_train, y_train, X_validation, X_test)
+    scores = evaluate_predictions(y_validation, y_pred_validation, y_test, y_pred_test)
+    return scores
+
+def run_xgboost_regression_experiment(n_estimators=100, learning_rate=0.1) -> dict[str, float]:
+    X_train, y_train, X_validation, y_validation, X_test, y_test = load_and_featurize_data()
+    model = XGBoostModel(n_estimators=n_estimators, learning_rate=learning_rate)
+    y_pred_validation, y_pred_test = fit_and_predict(model, X_train, y_train, X_validation, X_test)
+    scores = evaluate_predictions(y_validation, y_pred_validation, y_test, y_pred_test)
+    return scores
+
+def run_svm_regression_experiment(kernel='rbf', C=1.0, epsilon=0.1, gamma='scale') -> dict[str, float]:
+    X_train, y_train, X_validation, y_validation, X_test, y_test = load_and_featurize_data()
+    model = SupportVectorModel(kernel=kernel, C=C, epsilon=epsilon, gamma=gamma)
     y_pred_validation, y_pred_test = fit_and_predict(model, X_train, y_train, X_validation, X_test)
     scores = evaluate_predictions(y_validation, y_pred_validation, y_test, y_pred_test)
     return scores

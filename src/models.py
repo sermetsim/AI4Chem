@@ -11,6 +11,10 @@ TO DO:
 
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
+from xgboost import XGBRegressor
+from sklearn.svm import SVR
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
 
 class LinearRegressionClosedForm:
     """A simple implementation of Ordinary Least Squares linear regression."""
@@ -84,4 +88,51 @@ class RandomForest:
 
     def predict(self, X):
         predictions = self.rf_model.predict(X)
+        return predictions
+
+
+class XGBoostModel:
+    """ Regression using XGBoost Estimator. """
+
+    def __init__(self, n_estimators=100, learning_rate=0.1, random_state=42):
+        self.n_estimators = n_estimators
+        self.learning_rate = learning_rate
+        self.random_state = random_state
+        self.xgb_model = None # Initialisé à None avant le fit
+
+    def fit(self, X_train, y_train):
+        # Initialisation du modèle XGBoost avec les paramètres choisis
+        xgb_model = XGBRegressor(
+            n_estimators=self.n_estimators, 
+            learning_rate=self.learning_rate, 
+            random_state=self.random_state
+        )
+        xgb_model.fit(X_train, y_train)
+        self.xgb_model = xgb_model
+        return xgb_model
+
+    def predict(self, X):
+        # Vérification de sécurité pour s'assurer que le modèle a bien été entraîné
+        predictions = self.xgb_model.predict(X)
+        return predictions
+    
+
+class SupportVectorModel:
+    """ Regression using Support Vector Machine (SVR). """
+
+    def __init__(self, kernel='rbf', C=1.0, epsilon=0.1, gamma='scale'):
+        self.kernel = kernel
+        self.C = C # Paramètre de régularisation
+        self.epsilon = epsilon # Marge de tolérance
+        self.gamma = gamma # Paramètre du noyau
+        self.svr_pipeline = None
+
+    def fit(self, X_train, y_train):
+        # Utilisation d'un pipeline pour standardiser automatiquement les données avant le SVR
+        self.svr_pipeline = make_pipeline(StandardScaler(), SVR(kernel=self.kernel, C=self.C, epsilon=self.epsilon, gamma=self.gamma))
+        self.svr_pipeline.fit(X_train, y_train)
+        return self.svr_pipeline
+
+    def predict(self, X):
+        predictions = self.svr_pipeline.predict(X)
         return predictions
