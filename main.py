@@ -2,7 +2,7 @@
 
 import argparse
 
-from src.train import run_linear_regression_experiment, run_ridge_regression_experiment, run_random_forest_regression_experiment, run_xgboost_regression_experiment, run_svm_regression_experiment
+from src.train import run_elastic_net_regression_experiment, run_linear_regression_experiment, run_ridge_regression_experiment, run_random_forest_regression_experiment, run_xgboost_regression_experiment, run_svm_regression_experiment
 
 
 def parse_args() -> argparse.Namespace:
@@ -56,6 +56,12 @@ def parse_args() -> argparse.Namespace:
         default=1.0,
         help="Gamma parameter for SVM. Used only when --model svm.",
     )
+    parser.add_argument(
+        "--l1_ratio",
+        type=float,
+        default=0.5,
+        help="L1 regularization strength for Elastic Net. Used only when --model elasticnet.",
+    )
     return parser.parse_args()
 
 
@@ -79,6 +85,8 @@ def main() -> None:
         scores = run_xgboost_regression_experiment(n_estimators=args.n_estimators, learning_rate=args.learning_rate)
     elif args.model == "svm":
         scores = run_svm_regression_experiment(kernel=args.kernel, C=args.C, epsilon=args.epsilon)
+    elif args.model == "elasticnet":
+        scores = run_elastic_net_regression_experiment(alpha=args.alpha, l1_ratio=args.l1_ratio)
     else:
         raise ValueError(f"Unknown model: {args.model}")
 

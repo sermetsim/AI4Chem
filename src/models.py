@@ -12,6 +12,7 @@ TO DO:
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
+from sklearn.linear_model import ElasticNet
 from sklearn.svm import SVR
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
@@ -76,7 +77,7 @@ class RidgeRegressionClosedForm(LinearRegressionClosedForm):
 class RandomForest:
     """ Regression using Random Forest Estimator. """
 
-    def __init__(self, n_estimators = 100, random_state=42):
+    def __init__(self, n_estimators = 100, random_state=67):
         self.n_estimators = n_estimators
         self.random_state = random_state
 
@@ -136,3 +137,20 @@ class SupportVectorModel:
     def predict(self, X):
         predictions = self.svr_pipeline.predict(X)
         return predictions
+    
+class ElasticNetModel:
+    """ Regression using Elastic Net. """
+
+    def __init__(self, alpha=1.0, l1_ratio=0.5):
+        self.alpha = alpha
+        self.l1_ratio = l1_ratio
+        self.elastic_net = None
+
+    def fit(self, X_train, y_train):
+        self.elastic_net = ElasticNet(alpha=self.alpha, l1_ratio=self.l1_ratio)
+        self.elastic_net.fit(X_train, y_train)
+        return self.elastic_net
+
+    def predict(self, X):
+        predictions = self.elastic_net.predict(X)
+        return predictions 
