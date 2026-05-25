@@ -104,10 +104,9 @@ class XGBoostModel:
         self.learning_rate = learning_rate
         self.random_state = random_state
         self.max_depth = max_depth
-        self.xgb_model = None # Initialisé à None avant le fit
+        self.xgb_model = None
 
     def fit(self, X_train, y_train):
-        # Initialisation du modèle XGBoost avec les paramètres choisis
         xgb_model = XGBRegressor(
             n_estimators=self.n_estimators, 
             learning_rate=self.learning_rate, 
@@ -120,7 +119,6 @@ class XGBoostModel:
         return xgb_model
 
     def predict(self, X):
-        # Vérification de sécurité pour s'assurer que le modèle a bien été entraîné
         predictions = self.xgb_model.predict(X)
         return predictions
     
@@ -136,7 +134,6 @@ class SupportVectorModel:
         self.svr_pipeline = None
 
     def fit(self, X_train, y_train):
-        # Utilisation d'un pipeline pour standardiser automatiquement les données avant le SVR
         self.svr_pipeline = make_pipeline(StandardScaler(), SVR(kernel=self.kernel, C=self.C, epsilon=self.epsilon, gamma=self.gamma))
         self.svr_pipeline.fit(X_train, y_train)
         return self.svr_pipeline
