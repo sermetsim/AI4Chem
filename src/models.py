@@ -1,13 +1,3 @@
-"""
-For now:
-- Implement a simple linear regression model using the closed-form solution (Ordinary Least Squares).
-- Implement a simple Ridge regression model using the closed-form solution (L2 regularization).
-
-TO DO: 
-- Implement a simple Lasso regression model using coordinate descent (L1 regularization).
-- Implement a simple Elastic Net regression model using coordinate descent (combination of L1 and L2 regularization).
-- And more ...
-"""
 
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
