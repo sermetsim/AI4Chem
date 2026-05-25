@@ -287,6 +287,8 @@ Closed-form ordinary least squares can fail with a singular matrix on Morgan fin
 
 The `train` command already evaluates the final retrained model on the test set. The `test` command is useful for reloading a saved checkpoint and regenerating test predictions/metrics without retraining.
 
+Concerning the .joblib files, SVM and random forest models cannot be saved on GitHub because their size are too large (larger than 100 Mo). Nevertheless, the best parameters are available in artifacts/results.
+
 ## License
 
 See [LICENSE](LICENSE).
