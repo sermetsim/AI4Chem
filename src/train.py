@@ -1,13 +1,3 @@
-"""
-For now:
-- Train and solve using a simple linear regression model using the closed-form solution (Ordinary Least Squares).
-- Train and solve using a simple Ridge regression model using the closed-form solution (L2 regularization).
-- Evaluate the models using Mean Squared Error (MSE), Mean Absolute Error (MAE), and R^2 Score on the validation and test sets.
-TO DO:
-- Train and solve using a simple Lasso regression model using coordinate descent (L1 regularization
-- Train and solve using a simple Elastic Net regression model using coordinate descent (combination of L1 and L2 regularization).
-- And more ...
-"""
 
 import time
 import numpy as np
