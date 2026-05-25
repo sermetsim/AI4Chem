@@ -44,9 +44,6 @@ AI4Chem/
 │           ├── tg_train.csv
 │           ├── tg_validation.csv
 │           └── tg_test.csv
-├── notebooks/
-│   ├── 01_data_exploration.ipynb
-│   └── 02_ridge_baseline_comparison.ipynb
 ├── report/
 │   └── figures/
 ├── src/
