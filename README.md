@@ -1,4 +1,4 @@
-# AI4Chem - Polymer Glass Transition Prediction (Glass-TA)
+# AI4Chem - Glass Temperature Assessment (Glass-TA)
 
 This repository contains a machine learning workflow for predicting polymer glass transition temperature, \(T_g\), from polymer PSMILES strings.
 
