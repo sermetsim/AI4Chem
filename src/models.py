@@ -77,12 +77,16 @@ class RidgeRegressionClosedForm(LinearRegressionClosedForm):
 class RandomForest:
     """ Regression using Random Forest Estimator. """
 
-    def __init__(self, n_estimators = 100, random_state=67):
+    def __init__(self, n_estimators = 100, random_state=67, max_depth=None, min_samples_leaf=1):
         self.n_estimators = n_estimators
         self.random_state = random_state
+        self.max_depth = max_depth
+        self.min_samples_leaf = min_samples_leaf
+        self.rf_model = None
+
 
     def fit(self, X_train, y_train):
-        rf_model = RandomForestRegressor(n_estimators=self.n_estimators, random_state=self.random_state)
+        rf_model = RandomForestRegressor(n_estimators=self.n_estimators, random_state=self.random_state, max_depth=self.max_depth, min_samples_leaf=self.min_samples_leaf)
         rf_model.fit(X_train, y_train)
         self.rf_model = rf_model
         return rf_model
@@ -95,10 +99,11 @@ class RandomForest:
 class XGBoostModel:
     """ Regression using XGBoost Estimator. """
 
-    def __init__(self, n_estimators=100, learning_rate=0.1, random_state=42):
+    def __init__(self, n_estimators=100, learning_rate=0.1, random_state=42, max_depth=3):
         self.n_estimators = n_estimators
         self.learning_rate = learning_rate
         self.random_state = random_state
+        self.max_depth = max_depth
         self.xgb_model = None # Initialisé à None avant le fit
 
     def fit(self, X_train, y_train):
@@ -106,7 +111,9 @@ class XGBoostModel:
         xgb_model = XGBRegressor(
             n_estimators=self.n_estimators, 
             learning_rate=self.learning_rate, 
-            random_state=self.random_state
+            random_state=self.random_state,
+            max_depth=self.max_depth,
+            n_jobs=-1
         )
         xgb_model.fit(X_train, y_train)
         self.xgb_model = xgb_model
@@ -154,3 +161,21 @@ class ElasticNetModel:
     def predict(self, X):
         predictions = self.elastic_net.predict(X)
         return predictions 
+    
+
+def create_model(model_name: str, params: dict) -> object:
+    """Factory function to create a model instance based on the model name and parameters."""
+    model_classes = {
+        "linear": LinearRegressionClosedForm,
+        "ridge": RidgeRegressionClosedForm,
+        "randomforest": RandomForest,
+        "xgboost": XGBoostModel,
+        "svm": SupportVectorModel,
+        "elasticnet": ElasticNetModel,
+    }
+
+    if model_name not in model_classes:
+        raise ValueError(f"Unknown model name: {model_name}")
+
+    model_class = model_classes[model_name]
+    return model_class(**params)

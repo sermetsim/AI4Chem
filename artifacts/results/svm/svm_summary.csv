@@ -1,0 +1,2 @@
+model_name,best_params,best_validation_rmse,model_output_path,mse_test,mae_test,rmse_test,r2_test
+svm,"{""C"": 500.0, ""epsilon"": 0.5, ""gamma"": ""scale"", ""kernel"": ""rbf""}",45.407857570126055,artifacts/models/best_svm.joblib,2337.2683903927395,31.045324521686332,48.34530370566245,0.8104263275364952

@@ -1,0 +1,2 @@
+model_name,best_params,best_validation_rmse,model_output_path,mse_test,mae_test,rmse_test,r2_test
+ridge,"{""alpha"": 10.0}",42.20303863298425,artifacts/models/best_ridge.joblib,1951.262921710343,31.384902612539108,44.1731017895545,0.8417348732687302
