@@ -1,67 +1,109 @@
 """Command-line entry point for running AI4Chem experiments."""
 
 import argparse
+from pathlib import Path
 
-from src.train import run_elastic_net_regression_experiment, run_linear_regression_experiment, run_ridge_regression_experiment, run_random_forest_regression_experiment, run_xgboost_regression_experiment, run_svm_regression_experiment
+from src.train import (
+    DEFAULT_PARAM_GRIDS,
+    evaluate_single_split,
+    load_and_featurize_data,
+    run_model_selection_experiment,
+)
+from src.utils import flatten_result_row, load_model, save_dicts_to_csv
+
+
+MODEL_DIR = Path("artifacts") / "models"
+RESULTS_DIR = Path("artifacts") / "results"
+
+
+def default_model_path(model_name: str) -> Path:
+    """Return the default checkpoint path for a model name."""
+    return MODEL_DIR / f"best_{model_name}.joblib"
+
+
+def default_results_path(model_name: str) -> Path:
+    """Return the default summary results path for a model name."""
+    return RESULTS_DIR / model_name / f"{model_name}_summary.csv"
+
+
+def default_validation_results_path(model_name: str) -> Path:
+    """Return the default validation sweep results path for a model name."""
+    return RESULTS_DIR / model_name / f"{model_name}_validation_sweep.csv"
+
+
+def default_test_predictions_path(model_name: str) -> Path:
+    """Return the default test predictions path for a model name."""
+    return RESULTS_DIR / model_name / f"{model_name}_test_predictions.csv"
+
+
+def default_test_metrics_path(model_name: str) -> Path:
+    """Return the default test metrics path for a model name."""
+    return RESULTS_DIR / model_name / f"{model_name}_test_metrics.csv"
 
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(description="Run AI4Chem baseline experiments.")
-    parser.add_argument(
+    parser = argparse.ArgumentParser(description="Run AI4Chem experiments.")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    train_parser = subparsers.add_parser(
+        "train",
+        help="Select hyperparameters, retrain on train + validation, and save the model.",
+    )
+    train_parser.add_argument(
         "--model",
-        choices=["linear", "ridge", "randomforest", "xgboost", "svm"],
-        default="linear",
-        help="Model to run.",
+        choices=sorted(DEFAULT_PARAM_GRIDS),
+        required=True,
+        help="Model to train.",
     )
-    parser.add_argument(
-        "--alpha",
-        type=float,
-        default=1.0,
-        help="Ridge regularization strength. Used only when --model ridge.",
+    train_parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Path where the trained model checkpoint will be saved.",
     )
-    parser.add_argument(
-        "--n_estimators",
-        type=int,
-        default=100,
-        help="Number of estimator with Random Forest. Used only when --model randomforest or xgboost.",
+    train_parser.add_argument(
+        "--results-output",
+        type=Path,
+        default=None,
+        help="Path where the final summary CSV will be saved.",
     )
-    parser.add_argument(
-        "--learning_rate",
-        type=float,
-        default=0.1,
-        help="Learning rate for XGBoost. Used only when --model xgboost.",
+    train_parser.add_argument(
+        "--validation-output",
+        type=Path,
+        default=None,
+        help="Path where the validation sweep CSV will be saved.",
     )
-    parser.add_argument(
-        "--kernel",
-        choices=["linear", "poly", "rbf", "sigmoid"],
-        default="rbf",
-        help="Kernel for SVM. Used only when --model svm.",
+
+    test_parser = subparsers.add_parser(
+        "test",
+        help="Load a saved model checkpoint and evaluate it on the test set.",
     )
-    parser.add_argument(
-        "--C",
-        type=float,
-        default=1.0,
-        help="Regularization parameter for SVM. Used only when --model svm.",
+    test_parser.add_argument(
+        "--model",
+        choices=sorted(DEFAULT_PARAM_GRIDS),
+        required=True,
+        help="Model checkpoint to load if --checkpoint is not provided.",
     )
-    parser.add_argument(
-        "--epsilon",
-        type=float,
-        default=0.1,
-        help="Epsilon-tube parameter for SVM. Used only when --model svm.",
+    test_parser.add_argument(
+        "--checkpoint",
+        type=Path,
+        default=None,
+        help="Path to a saved model checkpoint.",
     )
-    parser.add_argument(
-        "--gamma",
-        type=float,
-        default=1.0,
-        help="Gamma parameter for SVM. Used only when --model svm.",
+    test_parser.add_argument(
+        "--predictions-output",
+        type=Path,
+        default=None,
+        help="Path where test predictions CSV will be saved.",
     )
-    parser.add_argument(
-        "--l1_ratio",
-        type=float,
-        default=0.5,
-        help="L1 regularization strength for Elastic Net. Used only when --model elasticnet.",
+    test_parser.add_argument(
+        "--metrics-output",
+        type=Path,
+        default=None,
+        help="Path where test metrics CSV will be saved.",
     )
+
     return parser.parse_args()
 
 
@@ -71,26 +113,98 @@ def print_scores(scores: dict[str, float]) -> None:
         print(f"{metric_name}: {value:.4f}")
 
 
+def print_train_results(results: dict) -> None:
+    """Print model-selection and final test results."""
+    print(f"model_name: {results['model_name']}")
+    print(f"best_params: {results['best_params']}")
+    print(f"best_validation_rmse: {results['best_validation_rmse']:.4f}")
+    print(f"model_output_path: {results['model_output_path']}")
+    print_scores(results["test_scores"])
+
+
+def save_train_results(results: dict, summary_path: Path, validation_path: Path) -> None:
+    """Save final summary and validation sweep results to CSV files."""
+    summary_row = {
+        "model_name": results["model_name"],
+        "best_params": results["best_params"],
+        "best_validation_rmse": results["best_validation_rmse"],
+        "model_output_path": results["model_output_path"],
+        **results["test_scores"],
+    }
+    save_dicts_to_csv([flatten_result_row(summary_row)], summary_path)
+    save_dicts_to_csv(
+        [flatten_result_row(row) for row in results["all_validation_results"]],
+        validation_path,
+    )
+
+
+def run_train_command(args: argparse.Namespace) -> None:
+    """Run the train command."""
+    output_path = args.output if args.output is not None else default_model_path(args.model)
+    summary_path = (
+        args.results_output
+        if args.results_output is not None
+        else default_results_path(args.model)
+    )
+    validation_path = (
+        args.validation_output
+        if args.validation_output is not None
+        else default_validation_results_path(args.model)
+    )
+
+    results = run_model_selection_experiment(
+        model_name=args.model,
+        param_grid=DEFAULT_PARAM_GRIDS[args.model],
+        model_output_path=output_path,
+    )
+    save_train_results(results, summary_path, validation_path)
+    print_train_results(results)
+    print(f"summary_results_path: {summary_path}")
+    print(f"validation_results_path: {validation_path}")
+
+
+def run_test_command(args: argparse.Namespace) -> None:
+    """Run the test command."""
+    checkpoint_path = args.checkpoint if args.checkpoint is not None else default_model_path(args.model)
+    predictions_path = (
+        args.predictions_output
+        if args.predictions_output is not None
+        else default_test_predictions_path(args.model)
+    )
+    metrics_path = (
+        args.metrics_output
+        if args.metrics_output is not None
+        else default_test_metrics_path(args.model)
+    )
+    model = load_model(checkpoint_path)
+
+    _, _, _, _, X_test, y_test = load_and_featurize_data()
+    y_pred_test = model.predict(X_test)
+    test_scores = evaluate_single_split(y_test, y_pred_test, split_name="test")
+    prediction_rows = [
+        {"sample_index": index, "y_true": y_true, "y_pred": y_pred}
+        for index, (y_true, y_pred) in enumerate(zip(y_test, y_pred_test))
+    ]
+
+    save_dicts_to_csv(prediction_rows, predictions_path)
+    save_dicts_to_csv([flatten_result_row(test_scores)], metrics_path)
+
+    print(f"checkpoint_path: {checkpoint_path}")
+    print_scores(test_scores)
+    print(f"test_predictions_path: {predictions_path}")
+    print(f"test_metrics_path: {metrics_path}")
+
+
 def main() -> None:
-    """Run the selected experiment."""
+    """Run the selected command."""
     args = parse_args()
 
-    if args.model == "linear":
-        scores = run_linear_regression_experiment()
-    elif args.model == "ridge":
-        scores = run_ridge_regression_experiment(alpha=args.alpha)
-    elif args.model == "randomforest":
-        scores = run_random_forest_regression_experiment(n_estimators=args.n_estimators)
-    elif args.model == "xgboost":
-        scores = run_xgboost_regression_experiment(n_estimators=args.n_estimators, learning_rate=args.learning_rate)
-    elif args.model == "svm":
-        scores = run_svm_regression_experiment(kernel=args.kernel, C=args.C, epsilon=args.epsilon)
-    elif args.model == "elasticnet":
-        scores = run_elastic_net_regression_experiment(alpha=args.alpha, l1_ratio=args.l1_ratio)
+    if args.command == "train":
+        run_train_command(args)
+    elif args.command == "test":
+        run_test_command(args)
     else:
-        raise ValueError(f"Unknown model: {args.model}")
-
-    print_scores(scores)
+        raise ValueError(f"Unknown command: {args.command}")
 
 
 if __name__ == "__main__":

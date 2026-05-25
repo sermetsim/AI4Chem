@@ -1,0 +1,2 @@
+model_name,best_params,best_validation_rmse,model_output_path,mse_test,mae_test,rmse_test,r2_test
+elasticnet,"{""alpha"": 0.001, ""l1_ratio"": 0.1}",42.364223351401925,artifacts/models/best_elasticnet.joblib,1979.1336717901027,31.452658193151954,44.48745521818598,0.8394743025663451

@@ -1,104 +1,85 @@
 # AI4Chem - Polymer Glass Transition Prediction
 
-This repository contains a machine learning pipeline for predicting polymer glass transition temperature, `T_g`, from polymer SMILES-like strings (`PSMILES`).
+This repository contains a machine learning workflow for predicting polymer glass transition temperature, \(T_g\), from polymer PSMILES strings.
 
-The current goal is to build a clean baseline workflow from scratch:
+The pipeline starts from the PolyMetriX raw `T_g` dataset, creates clean train/validation/test splits, converts PSMILES to Morgan fingerprints with RDKit, trains several regression models, saves model checkpoints and result CSV files, and generates report figures.
 
-- prepare the PolyMetriX `T_g` dataset;
-- convert PSMILES into Morgan fingerprints with RDKit;
-- train simple linear models implemented manually with NumPy;
-- evaluate the models on validation and test splits;
-- use notebooks to inspect data, results, and plots.
+## Implemented Workflow
 
-The project is intentionally educational: the first models are implemented from scratch instead of relying directly on scikit-learn.
-
-## Current Status
-
-Implemented:
-
-- raw-to-processed `T_g` dataset preparation;
-- stratified train/validation/test split by `meta.reliability`;
-- Morgan fingerprint featurization from PSMILES;
-- closed-form ordinary least squares regression;
-- closed-form Ridge regression;
-- regression metrics: MSE, RMSE, MAE, and R2;
-- command-line entry point for baseline models;
-- notebook for Ridge baseline comparison and plots.
-
-Planned:
-
-- Ridge regression with gradient descent;
-- Lasso / Elastic Net from scratch;
-- packaged baselines such as random forests or gradient boosting;
-- neural models or graph-based models later.
-
-## TODO
-
-Short-term:
-
-- [ ] Add Ridge regression trained with gradient descent from scratch.
-- [ ] Compare closed-form Ridge and gradient-descent Ridge.
-- [ ] Add validation-based alpha selection to the command-line workflow.
-- [ ] Save experiment results to a small CSV or JSON file.
-- [ ] Clean and complete `environment.yml`.
-
-Modeling:
-
-- [ ] Add Lasso regression from scratch.
-- [ ] Add Elastic Net regression from scratch.
-- [ ] Add packaged baselines for comparison, such as Random Forest and Gradient Boosting.
-- [ ] Investigate other polymer-specific featurizers.
-
-Analysis:
-
-- [ ] Add parity plots and residual plots for every model.
-- [ ] Analyze errors by `meta.reliability`.
-- [ ] Inspect worst predictions and chemically similar polymers.
-- [ ] Add a final model comparison notebook.
-
-Engineering:
-
-- [ ] Add proper tests for data loading, featurization, and metrics.
-- [ ] Add command-line options for model choice, alpha grid, and fingerprint settings.
-- [ ] Improve README results section once final baselines are stable.
+- Raw PolyMetriX data preparation.
+- Stratified train/validation/test split by `meta.reliability`.
+- RDKit Morgan fingerprint featurization from PSMILES.
+- Closed-form linear regression and Ridge regression implemented with NumPy.
+- Packaged model wrappers for:
+  - Random Forest
+  - XGBoost
+  - Support Vector Regression
+  - Elastic Net
+- Hyperparameter selection using validation RMSE.
+- Final retraining on train + validation.
+- Final evaluation on test data.
+- Model checkpoint saving with `joblib`.
+- CSV export for validation sweeps, final summaries, test metrics, and test predictions.
+- Report figure generation from saved CSV outputs.
 
 ## Repository Structure
 
 ```text
 AI4Chem/
+├── artifacts/
+│   ├── models/
+│   │   └── best_<model>.joblib
+│   └── results/
+│       └── <model>/
+│           ├── <model>_summary.csv
+│           ├── <model>_validation_sweep.csv
+│           ├── <model>_test_metrics.csv
+│           └── <model>_test_predictions.csv
 ├── data/
-│   ├── PolyMetriX/
-│   │   ├── raw/
-│   │   │   └── LAMALAB_CURATED_Tg_structured.csv
-│   │   └── processed/
-│   │       ├── tg_filtered.csv
-│   │       ├── tg_train.csv
-│   │       ├── tg_validation.csv
-│   │       └── tg_test.csv
-│   └── kaggle/
+│   └── PolyMetriX/
+│       ├── raw/
+│       │   └── LAMALAB_CURATED_Tg_structured.csv
+│       └── processed/
+│           ├── tg_filtered.csv
+│           ├── tg_train.csv
+│           ├── tg_validation.csv
+│           └── tg_test.csv
 ├── notebooks/
 │   ├── 01_data_exploration.ipynb
 │   └── 02_ridge_baseline_comparison.ipynb
+├── report/
+│   └── figures/
 ├── src/
 │   ├── data_utils.py
+│   ├── evaluate.py
 │   ├── featurize.py
 │   ├── models.py
-│   ├── evaluate.py
-│   └── train.py
+│   ├── train.py
+│   └── utils.py
 ├── main.py
+├── plot.py
 ├── environment.yml
 └── README.md
 ```
 
-## Data
+## Installation
 
-The first dataset used is:
+Create the conda environment:
 
-```text
-data/PolyMetriX/raw/LAMALAB_CURATED_Tg_structured.csv
+```bash
+conda env create -f environment.yml
+conda activate ai4chem
 ```
 
-The preprocessing step keeps only:
+## Data Preparation
+
+Prepare the PolyMetriX `T_g` dataset:
+
+```bash
+python src/data_utils.py
+```
+
+This keeps:
 
 - `PSMILES`
 - `labels.Exp_Tg(K)`
@@ -106,48 +87,7 @@ The preprocessing step keeps only:
 
 Rows with reliability `red` are removed.
 
-The processed data is split into:
-
-- train: 70%
-- validation: 15%
-- test: 15%
-
-The split is stratified by `meta.reliability`, so the reliability distribution is preserved across the three sets.
-
-## Installation
-
-Create and activate your environment, then install the required scientific Python packages.
-
-Minimum packages currently needed:
-
-- `numpy`
-- `rdkit`
-- `matplotlib`
-- `jupyter`
-
-Example with conda:
-
-```bash
-conda create -n ai4chem python=3.11 numpy matplotlib jupyter rdkit -c conda-forge
-conda activate ai4chem
-```
-
-If the project environment file is completed later, use:
-
-```bash
-conda env create -f environment.yml
-conda activate ai4chem
-```
-
-## Preparing the Data
-
-From the repository root:
-
-```bash
-python src/data_utils.py
-```
-
-This creates:
+The processed files are:
 
 ```text
 data/PolyMetriX/processed/tg_filtered.csv
@@ -156,7 +96,7 @@ data/PolyMetriX/processed/tg_validation.csv
 data/PolyMetriX/processed/tg_test.csv
 ```
 
-Expected split sizes after filtering:
+Expected split sizes:
 
 ```text
 Filtered: 7363 rows
@@ -165,148 +105,187 @@ Validation: 1104 rows
 Test: 1105 rows
 ```
 
-## Running Baseline Models
+## Training
 
-Run Ridge regression:
-
-```bash
-python main.py --model ridge --alpha 1.0
-```
-
-Run ordinary least squares:
+Train a model with hyperparameter selection:
 
 ```bash
-python main.py --model linear
+python main.py train --model ridge
 ```
 
-Note: closed-form OLS may fail with a singular matrix on Morgan fingerprints. This is expected because fingerprint columns can be redundant or linearly dependent. Ridge regression is the preferred baseline for this feature representation.
-
-## Notebooks
-
-Use the notebooks for exploration and plots:
+Available models:
 
 ```text
-notebooks/01_data_exploration.ipynb
-notebooks/02_ridge_baseline_comparison.ipynb
+ridge
+randomforest
+xgboost
+svm
+elasticnet
 ```
 
-The Ridge comparison notebook:
+Training does the following:
 
-- compares train/validation/test target distributions;
-- checks reliability distributions;
-- featurizes PSMILES;
-- confirms whether OLS fails;
-- sweeps Ridge `alpha`;
-- plots RMSE, MAE, and R2;
-- plots true vs predicted `T_g`;
-- plots residual distributions.
+1. Loads and featurizes train, validation, and test splits.
+2. Trains every hyperparameter configuration on the train split.
+3. Selects the best configuration using validation RMSE.
+4. Retrains the best model on train + validation.
+5. Evaluates the final model on the test split.
+6. Saves model and result artifacts.
+
+Default outputs for `ridge`:
+
+```text
+artifacts/models/best_ridge.joblib
+artifacts/results/ridge/ridge_summary.csv
+artifacts/results/ridge/ridge_validation_sweep.csv
+```
+
+Custom output paths:
+
+```bash
+python main.py train --model ridge \
+  --output artifacts/models/my_ridge.joblib \
+  --results-output artifacts/results/ridge/my_ridge_summary.csv \
+  --validation-output artifacts/results/ridge/my_ridge_validation_sweep.csv
+```
+
+## Testing A Saved Model
+
+Evaluate a saved checkpoint on the test split:
+
+```bash
+python main.py test --model ridge
+```
+
+Default outputs:
+
+```text
+artifacts/results/ridge/ridge_test_metrics.csv
+artifacts/results/ridge/ridge_test_predictions.csv
+```
+
+Custom checkpoint and output paths:
+
+```bash
+python main.py test --model ridge \
+  --checkpoint artifacts/models/best_ridge.joblib \
+  --metrics-output artifacts/results/ridge/custom_test_metrics.csv \
+  --predictions-output artifacts/results/ridge/custom_test_predictions.csv
+```
+
+## Plotting
+
+Generate report figures from saved CSV artifacts:
+
+```bash
+python plot.py
+```
+
+Figures are saved in:
+
+```text
+report/figures/
+```
+
+Generated figures include:
+
+- \(T_g\) distribution over train/validation/test splits.
+- Validation RMSE hyperparameter sweeps.
+- Final test RMSE comparison.
+- Final test MAE comparison.
+- Predicted vs experimental \(T_g\) parity plots.
+- Residual distribution plots.
+- Residual-vs-experimental overlay plots.
+- Absolute error boxplot per model.
 
 ## Code Overview
 
 ### `src/data_utils.py`
 
-Handles dataset preparation and CSV loading:
+Dataset preparation and CSV loading:
 
 - load raw CSV rows;
-- keep useful columns;
+- keep relevant `T_g` columns;
 - remove unreliable rows;
-- split train/validation/test;
+- create stratified train/validation/test splits;
 - load processed CSVs into PSMILES lists and target arrays.
 
 ### `src/featurize.py`
 
-Handles chemical featurization:
+Chemical featurization:
 
-- convert PSMILES to RDKit molecules;
-- generate Morgan fingerprints;
-- convert fingerprints into NumPy arrays.
+- PSMILES to RDKit molecule;
+- molecule to Morgan fingerprint;
+- Morgan fingerprint to NumPy feature matrix.
 
-Feature matrix convention:
+Feature convention:
 
 ```text
 X.shape = (n_molecules, n_features)
 ```
 
-For Morgan fingerprints:
-
-```text
-n_features = 2048
-```
+The current Morgan fingerprint size is 2048 bits.
 
 ### `src/models.py`
 
-Contains models implemented from scratch:
+Model definitions and factory:
 
 - `LinearRegressionClosedForm`
 - `RidgeRegressionClosedForm`
+- `RandomForest`
+- `XGBoostModel`
+- `SupportVectorModel`
+- `ElasticNetModel`
+- `create_model`
 
-Both use the interface:
+All models expose:
 
 ```python
 model.fit(X_train, y_train)
 y_pred = model.predict(X)
 ```
 
+### `src/train.py`
+
+Training workflow:
+
+- default hyperparameter grids;
+- train/validation/test loading and featurization;
+- hyperparameter selection;
+- final retraining;
+- final test evaluation;
+- checkpoint saving.
+
 ### `src/evaluate.py`
 
-Contains regression metrics:
+Regression metrics:
 
 - MSE
 - RMSE
 - MAE
-- R2
+- \(R^2\)
 
-### `src/train.py`
+### `src/utils.py`
 
-Connects the full baseline workflow:
+General utilities:
 
-```text
-load data -> featurize -> fit model -> predict -> evaluate
-```
+- save/load model checkpoints;
+- write dictionaries to CSV;
+- flatten nested result dictionaries for CSV output.
 
 ### `main.py`
 
-Command-line entry point.
+Command-line interface for training and testing.
 
-Example:
+### `plot.py`
 
-```bash
-python main.py --model ridge --alpha 10.0
-```
+Figure generation from saved result CSV files.
 
-## First Baseline Interpretation
+## Notes
 
-The Ridge baseline with Morgan fingerprints gives a first estimate of how much information the fingerprint representation contains for predicting `T_g`.
+Closed-form ordinary least squares can fail with a singular matrix on Morgan fingerprints because fingerprint features may be redundant or linearly dependent. Ridge regression is more stable and is the main linear baseline.
 
-MSE is reported in squared Kelvin, so RMSE and MAE are usually easier to interpret:
-
-```text
-RMSE: typical error scale in K
-MAE: average absolute error in K
-R2: fraction of target variance explained
-```
-
-## Development Notes
-
-Recommended workflow when adding a new model:
-
-1. Add the model class or wrapper in `src/models.py`.
-2. Reuse `load_and_featurize_data` from `src/train.py`.
-3. Reuse metrics from `src/evaluate.py`.
-4. Add a training function in `src/train.py`.
-5. Add a command-line option in `main.py`.
-6. Compare results in a notebook.
-
-Keep responsibilities separated:
-
-```text
-data_utils.py -> data loading and splitting
-featurize.py  -> PSMILES to numerical features
-models.py     -> model definitions
-evaluate.py   -> metrics
-train.py      -> training workflows
-main.py       -> command-line interface
-```
+The `train` command already evaluates the final retrained model on the test set. The `test` command is useful for reloading a saved checkpoint and regenerating test predictions/metrics without retraining.
 
 ## License
 

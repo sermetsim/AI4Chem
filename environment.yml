@@ -1,0 +1,13 @@
+name: ai4chem
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - matplotlib
+  - scikit-learn
+  - xgboost
+  - rdkit
+  - joblib
+  - jupyter
+  - ipykernel

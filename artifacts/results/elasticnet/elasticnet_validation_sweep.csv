@@ -1,0 +1,13 @@
+model_name,params,rmse_validation
+elasticnet,"{""alpha"": 0.001, ""l1_ratio"": 0.1}",42.364223351401925
+elasticnet,"{""alpha"": 0.001, ""l1_ratio"": 0.5}",42.96536648986825
+elasticnet,"{""alpha"": 0.001, ""l1_ratio"": 0.9}",46.553148484181236
+elasticnet,"{""alpha"": 0.01, ""l1_ratio"": 0.1}",44.05677512154019
+elasticnet,"{""alpha"": 0.01, ""l1_ratio"": 0.5}",43.18509835629373
+elasticnet,"{""alpha"": 0.01, ""l1_ratio"": 0.9}",42.42762746626443
+elasticnet,"{""alpha"": 0.1, ""l1_ratio"": 0.1}",52.088552397713116
+elasticnet,"{""alpha"": 0.1, ""l1_ratio"": 0.5}",50.31099164672456
+elasticnet,"{""alpha"": 0.1, ""l1_ratio"": 0.9}",47.454866121795014
+elasticnet,"{""alpha"": 1.0, ""l1_ratio"": 0.1}",69.83559552841601
+elasticnet,"{""alpha"": 1.0, ""l1_ratio"": 0.5}",66.48799845410808
+elasticnet,"{""alpha"": 1.0, ""l1_ratio"": 0.9}",59.873339615505756

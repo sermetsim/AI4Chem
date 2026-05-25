@@ -1,0 +1,2 @@
+model_name,best_params,best_validation_rmse,model_output_path,mse_test,mae_test,rmse_test,r2_test
+xgboost,"{""learning_rate"": 0.1, ""max_depth"": 3, ""n_estimators"": 300}",44.226204,artifacts/models/best_xgboost.joblib,2137.4336,32.927452,46.232388,0.82663476

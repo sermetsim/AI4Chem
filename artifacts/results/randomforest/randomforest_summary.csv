@@ -1,0 +1,2 @@
+model_name,best_params,best_validation_rmse,model_output_path,mse_test,mae_test,rmse_test,r2_test
+randomforest,"{""max_depth"": 40, ""min_samples_leaf"": 1, ""n_estimators"": 500}",38.36781723547069,artifacts/models/best_randomforest.joblib,1754.7026820117424,27.026246372572267,41.889171417106624,0.8576776920965282
