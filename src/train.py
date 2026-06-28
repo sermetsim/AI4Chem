@@ -11,7 +11,7 @@ TO DO:
 
 import numpy as np
 from src.data_utils import load_tg_csv, TRAIN_DATA_PATH, TEST_DATA_PATH, VALIDATION_DATA_PATH
-from src.models import LinearRegressionClosedForm, RidgeRegressionClosedForm, RandomForest, XGBoostModel, SupportVectorModel
+from src.models import ElasticNetModel, LinearRegressionClosedForm, RidgeRegressionClosedForm, RandomForest, XGBoostModel, SupportVectorModel
 from src.evaluate import mean_squared_error, mean_absolute_error, r2_score, root_mean_squared_error
 from src.featurize import psmiles_to_nparray
 from pathlib import Path
@@ -106,4 +106,19 @@ def run_svm_regression_experiment(kernel='rbf', C=1.0, epsilon=0.1, gamma='scale
     model = SupportVectorModel(kernel=kernel, C=C, epsilon=epsilon, gamma=gamma)
     y_pred_validation, y_pred_test = fit_and_predict(model, X_train, y_train, X_validation, X_test)
     scores = evaluate_predictions(y_validation, y_pred_validation, y_test, y_pred_test)
+    return scores
+
+def run_elastic_net_regression_experiment(alpha=1.0, l1_ratio=0.5) -> dict[str, float]:
+    X_train, y_train, X_validation, y_validation, X_test, y_test = load_and_featurize_data()
+    model = ElasticNetModel(alpha=alpha, l1_ratio=l1_ratio)
+    y_pred_validation, y_pred_test = fit_and_predict(model, X_train, y_train, X_validation, X_test)
+    scores = evaluate_predictions(y_validation, y_pred_validation, y_test, y_pred_test)
+    return scores
+
+def run_ensemble_regression_experiment(model_1, model_2, model_3) -> dict[str, float]:
+    X_train, y_train, X_validation, y_validation, X_test, y_test = load_and_featurize_data()
+    y_pred_validation_1, y_pred_test_1 = fit_and_predict(model_1, X_train, y_train, X_validation, X_test)
+    y_pred_validation_2, y_pred_test_2 = fit_and_predict(model_2, X_train, y_train, X_validation, X_test)
+    y_pred_validation_3, y_pred_test_3 = fit_and_predict(model_3, X_train, y_train, X_validation, X_test)
+    scores = evaluate_predictions(y_validation, (y_pred_validation_1 + y_pred_validation_2 + y_pred_validation_3) / 3, y_test, (y_pred_test_1 + y_pred_test_2 + y_pred_test_3) / 3)
     return scores
