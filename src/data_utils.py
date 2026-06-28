@@ -14,8 +14,8 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-RAW_DATA_PATH = PROJECT_ROOT / "data" / "PolyMetriX" / "raw" / "LAMALAB_CURATED_Tg_structured.csv"
-PROCESSED_DATA_DIR = PROJECT_ROOT / "data" / "PolyMetriX" / "processed"
+RAW_DATA_PATH = PROJECT_ROOT / "AI4Chem" / "data" / "PolyMetriX" / "raw" / "LAMALAB_CURATED_Tg_structured.csv"
+PROCESSED_DATA_DIR = PROJECT_ROOT / "AI4Chem" / "data" / "PolyMetriX" / "processed"
 
 FILTERED_DATA_PATH = PROCESSED_DATA_DIR / "tg_filtered.csv"
 TRAIN_DATA_PATH = PROCESSED_DATA_DIR / "tg_train.csv"
